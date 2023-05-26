@@ -1,0 +1,91 @@
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.util.Duration;
+
+import static java.lang.Math.round;
+
+public class Bird {
+    private final double scale;
+    private final double backgroundWidth;
+    private final double birdSpeed;
+    private int frameIndexBird;
+    private double birdDirection;
+    private final int timelineDuration;
+    private final int dyingDuration;
+    private final String birdName;
+    private final String birdType;
+    private final ImageView bird;
+    Timeline translateTimeline;
+    Timeline flyTimeline;
+
+    public Bird(double scale, double backgroundWidth, String birdName, String birdType)   {
+        this.birdSpeed = 38;
+        this.birdDirection = 1;
+        this.scale = scale;
+        this.backgroundWidth = backgroundWidth;
+        this.timelineDuration = 300;
+        this.dyingDuration = 500;
+        this.birdName = birdName;
+        this.birdType = birdType;
+        this.bird = new ImageView();
+        configureBird();
+    }
+
+    public void configureBird()  {
+        int birdImageNumber = 1;
+        if (birdType.equals("horizontal1")) {
+            birdImageNumber = 4;
+        }
+        Image[] birdFrames = new Image[3];
+        for (int i = 0; i < 3; i++) {
+            birdFrames[i] = new Image("assets/"+ birdName +"/" + (i + birdImageNumber) + ".png");
+        }
+        bird.setFitWidth(birdFrames[0].getWidth() * scale);
+        bird.setFitHeight(birdFrames[0].getHeight() * scale);
+        flyTimeline = new Timeline(new KeyFrame(Duration.millis(timelineDuration), event -> {
+            frameIndexBird = (frameIndexBird + 1) % 3;
+            bird.setImage(birdFrames[frameIndexBird]);
+        }));
+        flyTimeline.setCycleCount(Animation.INDEFINITE);
+        flyTimeline.play();
+
+        bird.setTranslateX((backgroundWidth * 3 - bird.getFitWidth()) / birdSpeed * 9);
+        bird.setY(100);
+        translateTimeline = new Timeline(new KeyFrame(Duration.millis(timelineDuration), event -> {
+            if (round(bird.getTranslateX()) + bird.getFitWidth() >= backgroundWidth * 3)   {
+                birdDirection = -1;
+                bird.setScaleX(-1);
+            }
+            if (round(bird.getTranslateX())  <= 0)  {
+                birdDirection = 1;
+                bird.setScaleX(1);
+            }
+            bird.setTranslateX(bird.getTranslateX() + birdDirection * (backgroundWidth * 3 -
+                    bird.getFitWidth()) / birdSpeed);
+        }));
+        translateTimeline.setCycleCount(Animation.INDEFINITE);
+        translateTimeline.play();
+    }
+
+    public void hitBird()   {
+        translateTimeline.stop();
+        flyTimeline.stop();
+        Timeline dieImageTimeline = new Timeline(
+                new KeyFrame(Duration.ZERO, event -> {
+                    bird.setImage( new Image("assets/"+ birdName +"/" + 7 + ".png"));
+                }),
+                new KeyFrame(Duration.millis(dyingDuration), event -> {
+                    bird.setImage( new Image("assets/"+ birdName +"/" + 8 + ".png"));
+//                    startTranslateYAnimation();
+                })
+        );
+        dieImageTimeline.play();
+    }
+
+    public ImageView getBird() {
+        return bird;
+    }
+}
